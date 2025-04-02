@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TaleGen</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 20px;
+      width: 100vw;
+      height: auto;
+      font-family: Arial, sans-serif;
+      color: white;
+      scroll-behavior: smooth;
+      background: url('{{ url_for("static", filename="images/img1.webp") }}') no-repeat center center fixed;
+      background-size: cover;
+   }
+   
+
+   .container {
+    position: relative;
+    padding: 20px;
+    border-radius: 10px;
+    width: 600px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    background: transparent; /* Fully transparent */
+    box-shadow: none; /* Remove any shadow */
+    margin-top: 50px;
+  }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    label {
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-bottom: 2px solid white;
+      background: transparent;
+      color: white;
+      font-size: 16px;
+      outline: none;
+    }
+
+    textarea {
+      height: 120px;
+      resize: none;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: black;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .image-section {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding-top: 50px;
+    }
+
+    .image-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      width: 50%;
+      max-width: 800px;
+    }
+
+    .image-grid img {
+      width: 100%;
+      height: 300px;
+      object-fit: contain;
+      border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+  </style>
+</head>
+<body>
+  
+  <div class="container">
+    <div class="form-group">
+      <label for="name">📝 Name</label>
+      <input type="text" id="name">
+    </div>
+    <div class="form-group">
+      <label for="skills">🎯 Skills</label>
+      <input type="text" id="skills">
+    </div>
+    <div class="form-group">
+      <label for="ability">⚡ Ability</label>
+      <input type="text" id="ability">
+    </div>
+    <div class="form-group">
+      <label for="rank">🏆 Rank</label>
+      <input type="text" id="rank">
+    </div>
+    <button onclick="generateCharacter()">Generate Character</button>
+
+    <div class="form-group">
+      <label>📖 Generated Story</label>
+      <textarea id="description" readonly></textarea>
+    </div>
+
+    <a href="#image-section" style="text-align:center; color:white; text-decoration:none; font-size:18px; display:block; margin-top:20px;">
+      🔽 Scroll down to see images 🔽
+    </a>
+  </div>
+
+  <div class="image-section" id="image-section">
+    <h2>🖼️ Generated Images</h2>
+    <div class="image-grid" id="image-grid"></div>
+  </div>
+
+  <script>
+    async function generateCharacter() {
+      const name = document.getElementById('name').value.trim();
+      const skills = document.getElementById('skills').value.trim();
+      const ability = document.getElementById('ability').value.trim();
+      const rank = document.getElementById('rank').value.trim();
+      document.getElementById('description').value = "⏳ Generating backstory...";
+
+      try {
+        const storyResponse = await fetch("http://127.0.0.1:5001/generate-story", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, skills, ability, rank })
+        });
+
+        const storyData = await storyResponse.json();
+        document.getElementById('description').value = storyData.story;
+
+        const imageResponse = await fetch("http://127.0.0.1:5001/generate-image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ description: storyData.story })
+        });
+
+        const imageData = await imageResponse.json();
+        const imageGrid = document.getElementById('image-grid');
+        imageGrid.innerHTML = "";
+
+        imageData.images.forEach(imageUrl => {
+          const img = document.createElement("img");
+          img.src = `/static/generated_images/${imageUrl.split('/').pop()}`;
+          imageGrid.appendChild(img);
+        });
+      } catch (error) {
+        console.error("Error generating character:", error);
+        document.getElementById('description').value = "❌ Failed to generate story!";
+      }
+    }
+  </script>
+
+</body>
+</html>
